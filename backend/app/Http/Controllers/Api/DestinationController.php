@@ -12,19 +12,18 @@ class DestinationController extends Controller
 {
     /**
      * PUBLIC: Menampilkan daftar wisata (List & Search)
-     * Flowchart: "Cari Wisata / Kategori"
      */
     public function index(Request $request)
     {
         // Mulai query, hanya ambil yang aktif
         $query = Destination::with('category')->where('is_active', true);
 
-        // 1. Fitur Search (Berdasarkan Nama)
+        // Fitur Search (Berdasarkan Nama)
         if ($request->has('search')) {
             $query->where('name', 'like', '%' . $request->search . '%');
         }
 
-        // 2. Fitur Filter Kategori (Misal: ?category_slug=bali)
+        // Fitur Filter Kategori
         if ($request->has('category_slug')) {
             $query->whereHas('category', function ($q) use ($request) {
                 $q->where('slug', $request->category_slug);
@@ -34,7 +33,7 @@ class DestinationController extends Controller
         // Urutkan dari yang terbaru
         $destinations = $query->latest()->get();
 
-        // Transform data agar URL gambar lengkap (mudah dibaca Next.js)
+        // Transform data agar URL gambar lengkap
         $data = $destinations->map(function ($item) {
             $item->image_url = $item->image_url ? asset('storage/' . $item->image_url) : null;
             return $item;
@@ -45,7 +44,6 @@ class DestinationController extends Controller
 
     /**
      * PUBLIC: Detail Wisata Single Page
-     * Flowchart: "Halaman Detail Wisata" & "SEO Tags"
      */
     public function show($slug)
     {
@@ -61,14 +59,13 @@ class DestinationController extends Controller
                 'id' => $destination->id,
                 'name' => $destination->name,
                 'slug' => $destination->slug,
-                'category' => $destination->category->name, // Tampilkan nama kategori
+                'category' => $destination->category->name,
                 'description' => $destination->description,
                 'price' => $destination->price,
                 'location' => $destination->location,
                 'image_url' => $imageUrl,
                 'is_active' => $destination->is_active,
             ],
-            // Struktur khusus untuk SEO Head di Next.js
             'seo' => [
                 'title' => $destination->meta_title ?? $destination->name,
                 'description' => $destination->meta_description ?? Str::limit(strip_tags($destination->description), 150),
@@ -80,7 +77,6 @@ class DestinationController extends Controller
 
     /**
      * ADMIN: Simpan Wisata Baru
-     * Flowchart: "Input Data Wisata & Meta SEO Tags"
      */
     public function store(Request $request)
     {
@@ -93,23 +89,21 @@ class DestinationController extends Controller
             'location' => 'required|string',
             'image' => 'required|image|mimes:jpeg,png,jpg,webp|max:2048', // Max 2MB
 
-            // SEO Fields
             'meta_title' => 'nullable|string|max:100',
             'meta_description' => 'nullable|string|max:255',
             'meta_keywords' => 'nullable|string',
         ]);
 
-        // 1. Generate Slug Otomatis
+        // Generate Slug Otomatis
         $validated['slug'] = Str::slug($validated['name']);
 
-        // 2. Upload Gambar
+        // Upload Gambar
         if ($request->hasFile('image')) {
-            // Simpan di folder: storage/app/public/destinations
             $path = $request->file('image')->store('destinations', 'public');
             $validated['image_url'] = $path;
         }
 
-        // 3. Simpan ke Database
+        // Simpan ke Database
         $destination = Destination::create($validated);
 
         return response()->json([
@@ -120,7 +114,6 @@ class DestinationController extends Controller
 
     /**
      * ADMIN: Update Wisata
-     * Flowchart: "Edit Data Wisata"
      */
     public function update(Request $request, $id)
     {
@@ -135,7 +128,7 @@ class DestinationController extends Controller
             'image' => 'nullable|image|mimes:jpeg,png,jpg,webp|max:2048',
             'meta_title' => 'nullable|string',
             'meta_description' => 'nullable|string',
-            'is_active' => 'boolean' // Untuk fitur Non-aktifkan sementara
+            'is_active' => 'boolean'
         ]);
 
         // Cek jika nama berubah, update slug juga
@@ -145,7 +138,7 @@ class DestinationController extends Controller
 
         // Cek jika ada upload gambar baru
         if ($request->hasFile('image')) {
-            // Hapus gambar lama agar server tidak penuh
+            // Hapus gambar lama
             if ($destination->image_url && Storage::disk('public')->exists($destination->image_url)) {
                 Storage::disk('public')->delete($destination->image_url);
             }
@@ -165,7 +158,6 @@ class DestinationController extends Controller
 
     /**
      * ADMIN: Hapus Wisata
-     * Flowchart: "Hapus Data"
      */
     public function destroy($id)
     {

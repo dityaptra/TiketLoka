@@ -20,7 +20,6 @@ class ReviewController extends Controller
 
         $userId = $request->user()->id;
 
-        // 1. CEK KELAYAKAN (Verified Purchase Check)
         // Cari transaksi milik user ini, yang statusnya 'success', 
         // dan di dalamnya ada item tiket wisata yang mau direview.
         $validTransaction = Transaction::where('user_id', $userId)
@@ -37,7 +36,6 @@ class ReviewController extends Controller
             ], 403);
         }
 
-        // 2. CEK DUPLIKASI
         // Apakah user sudah pernah review untuk transaksi ini?
         $existingReview = Review::where('user_id', $userId)
             ->where('destination_id', $request->destination_id)
@@ -66,10 +64,10 @@ class ReviewController extends Controller
     // Lihat Review per Destinasi (Public)
     public function index($destinationId)
     {
-        $reviews = Review::with('user:id,name') // Ambil nama user saja
+        $reviews = Review::with('user:id,name') 
             ->where('destination_id', $destinationId)
             ->latest()
-            ->paginate(5); // Pakai pagination biar ringan
+            ->paginate(5);
 
         return response()->json($reviews);
     }

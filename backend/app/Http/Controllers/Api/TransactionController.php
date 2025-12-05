@@ -21,16 +21,16 @@ class TransactionController extends Controller
     {
         $request->validate([
             'payment_method' => 'required|string',
-            'cart_ids' => 'required|array|min:1', // Wajib kirim array ID cart
-            'cart_ids.*' => 'integer|exists:carts,id', // Validasi tiap item harus ada di DB
+            'cart_ids' => 'required|array|min:1',
+            'cart_ids.*' => 'integer|exists:carts,id',
         ]);
 
         $userId = $request->user()->id;
 
-        // 1. Ambil item keranjang SESUAI YANG DIPILIH user & MILIK user tersebut
+        // Ambil item keranjang SESUAI YANG DIPILIH user & MILIK user tersebut
         $carts = Cart::with('destination')
             ->where('user_id', $userId)
-            ->whereIn('id', $request->cart_ids) // <--- FILTER KUNCI DISINI
+            ->whereIn('id', $request->cart_ids)
             ->get();
 
         // Validasi: Jika user mencoba checkout ID cart orang lain / cart kosong
@@ -40,7 +40,7 @@ class TransactionController extends Controller
 
         return DB::transaction(function () use ($request, $carts, $userId) {
 
-            // 2. Hitung Total
+            // Hitung Total
             $total = 0;
             foreach ($carts as $cart) {
                 $total += $cart->destination->price * $cart->quantity;
@@ -48,7 +48,7 @@ class TransactionController extends Controller
 
             $invoiceCode = 'INV-' . Carbon::now()->format('Ymd') . '-' . Str::upper(Str::random(4));
 
-            // 3. Buat Transaksi (Langsung Success)
+            // Buat Transaksi (Langsung Success)
             $transaction = Transaction::create([
                 'user_id' => $userId,
                 'invoice_code' => $invoiceCode,
@@ -58,8 +58,8 @@ class TransactionController extends Controller
                 'payment_method' => $request->payment_method,
             ]);
 
-            // 4. Pindahkan item ke TransactionDetail
-            // Kita kumpulkan ID cart yang berhasil diproses untuk dihapus nanti
+            // Pindahkan item ke TransactionDetail
+            // Kumpulkan ID cart yang berhasil diproses untuk dihapus nanti
             $processedCartIds = [];
 
             foreach ($carts as $cart) {
@@ -75,8 +75,8 @@ class TransactionController extends Controller
                 $processedCartIds[] = $cart->id;
             }
 
-            // 5. Hapus HANYA item yang dipilih dari keranjang
-            // Item yang tidak dipilih (tidak ada di array cart_ids) akan tetap aman di keranjang
+            // Hapus HANYA item yang dipilih dari keranjang
+            // Item yang tidak dipilih akan tetap aman di keranjang
             Cart::whereIn('id', $processedCartIds)->delete();
 
             return response()->json([
@@ -104,13 +104,8 @@ class TransactionController extends Controller
                 'user_id' => $userId,
                 'invoice_code' => $invoiceCode,
                 'grand_total' => $totalAmount,
-
-                // Ubah jadi SUCCESS langsung
                 'status' => 'success',
-
-                // Langsung isi waktu bayar
                 'paid_at' => now(),
-
                 'payment_method' => $request->payment_method,
             ]);
 
