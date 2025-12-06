@@ -10,8 +10,8 @@ use Carbon\Carbon;
 use App\Models\User;
 use App\Models\Category;
 use App\Models\Destination;
-use App\Models\Transaction;
-use App\Models\TransactionDetail;
+use App\Models\Booking;
+use App\Models\BookingDetail;
 use App\Models\Review; // <--- Jangan lupa import model Review
 
 class DatabaseSeeder extends Seeder
@@ -21,8 +21,8 @@ class DatabaseSeeder extends Seeder
         // 1. Bersihkan tabel lama (Urutan penting agar tidak error Foreign Key)
         Schema::disableForeignKeyConstraints();
         Review::truncate();            // Hapus Review
-        TransactionDetail::truncate(); // Hapus Detail Transaksi
-        Transaction::truncate();       // Hapus Transaksi
+        BookingDetail::truncate(); // Hapus Detail Transaksi
+        Booking::truncate();       // Hapus Transaksi
         Destination::truncate();       // Hapus Wisata
         Category::truncate();          // Hapus Kategori
         User::truncate();              // Hapus User
@@ -103,19 +103,18 @@ class DatabaseSeeder extends Seeder
             'is_active' => true,
         ]);
 
-        // --- D. SEED TRANSACTIONS (Syarat agar bisa Review) ---
 
         // 1. Transaksi SUKSES Budi -> Beli Tanah Lot
-        $trx1 = Transaction::create([
+        $trx1 = Booking::create([
             'user_id' => $customer1->id,
-            'invoice_code' => 'INV-TEST-001',
+            'booking_code' => 'TLX7K92M',
             'grand_total' => 100000,
             'status' => 'success', // WAJIB SUCCESS AGAR BISA REVIEW
             'payment_method' => 'bank_transfer',
             'paid_at' => now()->subDays(2),
         ]);
-        TransactionDetail::create([
-            'transaction_id' => $trx1->id,
+        BookingDetail::create([
+            'booking_id' => $trx1->id,
             'destination_id' => $destTanahLot->id,
             'quantity' => 2,
             'price_per_unit' => 50000,
@@ -124,16 +123,16 @@ class DatabaseSeeder extends Seeder
         ]);
 
         // 2. Transaksi SUKSES Siti -> Beli Tanah Lot (User berbeda beli barang sama)
-        $trx2 = Transaction::create([
+        $trx2 = Booking::create([
             'user_id' => $customer2->id,
-            'invoice_code' => 'INV-TEST-002',
+            'booking_code' => 'TLX7K93M',
             'grand_total' => 50000,
             'status' => 'success',
             'payment_method' => 'ewallet',
             'paid_at' => now()->subDays(1),
         ]);
-        TransactionDetail::create([
-            'transaction_id' => $trx2->id,
+        BookingDetail::create([
+            'booking_id' => $trx2->id,
             'destination_id' => $destTanahLot->id,
             'quantity' => 1,
             'price_per_unit' => 50000,
@@ -142,15 +141,15 @@ class DatabaseSeeder extends Seeder
         ]);
 
         // 3. Transaksi SUKSES Budi -> Beli Borobudur
-        $trx3 = Transaction::create([
+        $trx3 = Booking::create([
             'user_id' => $customer1->id,
-            'invoice_code' => 'INV-TEST-003',
+            'booking_code' => 'TLX7K94M',
             'grand_total' => 75000,
             'status' => 'success',
             'paid_at' => now()->subDays(5),
         ]);
-        TransactionDetail::create([
-            'transaction_id' => $trx3->id,
+        BookingDetail::create([
+            'booking_id' => $trx3->id,
             'destination_id' => $destBorobudur->id,
             'quantity' => 1,
             'price_per_unit' => 75000,
@@ -164,7 +163,7 @@ class DatabaseSeeder extends Seeder
         Review::create([
             'user_id' => $customer1->id,
             'destination_id' => $destTanahLot->id,
-            'transaction_id' => $trx1->id, // Terhubung ke Transaksi 1
+            'booking_id' => $trx1->id, // Terhubung ke Transaksi 1
             'rating' => 5,
             'comment' => 'Pemandangannya luar biasa indah! Sangat recommended untuk melihat sunset.',
             'created_at' => now()->subHours(5),
@@ -174,7 +173,7 @@ class DatabaseSeeder extends Seeder
         Review::create([
             'user_id' => $customer2->id,
             'destination_id' => $destTanahLot->id,
-            'transaction_id' => $trx2->id, // Terhubung ke Transaksi 2
+            'booking_id' => $trx2->id, // Terhubung ke Transaksi 2
             'rating' => 4,
             'comment' => 'Tempatnya bagus, tapi agak ramai pengunjung jadi susah parkir.',
             'created_at' => now()->subHours(2),
@@ -184,7 +183,7 @@ class DatabaseSeeder extends Seeder
         Review::create([
             'user_id' => $customer1->id,
             'destination_id' => $destBorobudur->id,
-            'transaction_id' => $trx3->id,
+            'booking_id' => $trx3->id,
             'rating' => 5,
             'comment' => 'Megah sekali! Guide-nya juga ramah.',
         ]);

@@ -3,18 +3,14 @@
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\Api\AuthController;
+use App\Http\Controllers\Api\ProfileController;
 use App\Http\Controllers\Api\DestinationController;
 use App\Http\Controllers\Api\CartController;
-use App\Http\Controllers\Api\TransactionController;
+use App\Http\Controllers\Api\BookingController;
 use App\Http\Controllers\Api\CategoryController;
 use App\Http\Controllers\Api\ReviewController;
-use App\Http\Controllers\Api\DashboardController; // <--- Tambahan Penting
+use App\Http\Controllers\Api\DashboardController;
 
-/*
-|--------------------------------------------------------------------------
-| API Routes
-|--------------------------------------------------------------------------
-*/
 
 // --- PUBLIC ROUTES (Bisa diakses tanpa login) ---
 Route::post('/register', [AuthController::class, 'register']);
@@ -37,18 +33,20 @@ Route::middleware('auth:sanctum')->group(function () {
         return $request->user();
     });
 
+    Route::put('/profile', [ProfileController::class, 'update']);
+
     // Cart (Keranjang)
     Route::get('/cart', [CartController::class, 'index']);
     Route::post('/cart', [CartController::class, 'store']);
     Route::delete('/cart/{id}', [CartController::class, 'destroy']);
 
     // Checkout (Dari Keranjang)
-    Route::post('/checkout', [TransactionController::class, 'checkout']);
+    Route::post('/checkout', [BookingController::class, 'checkout']);
 
     // Beli Langsung (Tanpa Keranjang)
-    Route::post('/buy-now', [TransactionController::class, 'buyNow']);
-    Route::get('/my-transactions', [TransactionController::class, 'myTransactions']);
-    Route::get('/transactions/{invoice_code}', [TransactionController::class, 'show']);
+    Route::post('/buy-now', [BookingController::class, 'buyNow']);
+    Route::get('/my-bookings', [BookingController::class, 'myBookings']);
+    Route::get('/bookings/{booking_code}', [BookingController::class, 'show']);
 
     // Kirim Review
     Route::post('/reviews', [ReviewController::class, 'store']);
@@ -69,6 +67,6 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::delete('/destinations/{id}', [DestinationController::class, 'destroy']);
 
         // Manajemen Transaksi
-        Route::get('/transactions', [TransactionController::class, 'adminIndex']);
+        Route::get('/bookings', [BookingController::class, 'adminIndex']);
     });
 });

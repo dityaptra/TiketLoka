@@ -4,7 +4,7 @@ namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
 use App\Models\Review;
-use App\Models\Transaction;
+use App\Models\Booking;
 use Illuminate\Http\Request;
 
 class ReviewController extends Controller
@@ -22,7 +22,7 @@ class ReviewController extends Controller
 
         // Cari transaksi milik user ini, yang statusnya 'success', 
         // dan di dalamnya ada item tiket wisata yang mau direview.
-        $validTransaction = Transaction::where('user_id', $userId)
+        $validBooking = Booking::where('user_id', $userId)
             ->where('status', 'success')
             ->whereHas('details', function ($query) use ($request) {
                 $query->where('destination_id', $request->destination_id);
@@ -30,7 +30,7 @@ class ReviewController extends Controller
             ->latest()
             ->first();
 
-        if (!$validTransaction) {
+        if (!$validBooking) {
             return response()->json([
                 'message' => 'Anda harus membeli tiket wisata ini dan menyelesaikan pembayaran sebelum memberi review.'
             ], 403);
@@ -39,7 +39,7 @@ class ReviewController extends Controller
         // Apakah user sudah pernah review untuk transaksi ini?
         $existingReview = Review::where('user_id', $userId)
             ->where('destination_id', $request->destination_id)
-            ->where('transaction_id', $validTransaction->id)
+            ->where('booking_id', $validBooking->id)
             ->first();
 
         if ($existingReview) {
@@ -50,7 +50,7 @@ class ReviewController extends Controller
         $review = Review::create([
             'user_id' => $userId,
             'destination_id' => $request->destination_id,
-            'transaction_id' => $validTransaction->id,
+            'booking_id' => $validBooking->id,
             'rating' => $request->rating,
             'comment' => $request->comment,
         ]);

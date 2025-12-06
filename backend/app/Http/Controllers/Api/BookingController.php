@@ -4,15 +4,16 @@ namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
 use App\Models\Cart;
-use App\Models\Transaction;
-use App\Models\TransactionDetail;
+use App\Models\Booking;
+use App\Models\BookingDetail;
+use App\Models\Destination;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\Auth;
 
-class TransactionController extends Controller
+class BookingController extends Controller
 {
     // --- USER AREA ---
 
@@ -46,25 +47,29 @@ class TransactionController extends Controller
                 $total += $cart->destination->price * $cart->quantity;
             }
 
-            $invoiceCode = 'INV-' . Carbon::now()->format('Ymd') . '-' . Str::upper(Str::random(4));
+            do {
+                // Generate: TL + 6 karakter random uppercase (Tanpa Strip)
+                // Contoh Hasil: TLX7K92M
+                $bookingCode = 'TL' . Str::upper(Str::random(6));
+            } while (Booking::where('booking_code', $bookingCode)->exists());
 
             // Buat Transaksi (Langsung Success)
-            $transaction = Transaction::create([
+            $booking = Booking::create([
                 'user_id' => $userId,
-                'invoice_code' => $invoiceCode,
+                'booking_code' => $bookingCode,
                 'grand_total' => $total,
                 'status' => 'success',
                 'paid_at' => now(),
                 'payment_method' => $request->payment_method,
             ]);
 
-            // Pindahkan item ke TransactionDetail
+            // Pindahkan item ke BookingDetail
             // Kumpulkan ID cart yang berhasil diproses untuk dihapus nanti
             $processedCartIds = [];
 
             foreach ($carts as $cart) {
-                TransactionDetail::create([
-                    'transaction_id' => $transaction->id,
+                BookingDetail::create([
+                    'booking_id' => $booking->id,
                     'destination_id' => $cart->destination_id,
                     'quantity' => $cart->quantity,
                     'price_per_unit' => $cart->destination->price,
@@ -81,8 +86,8 @@ class TransactionController extends Controller
 
             return response()->json([
                 'message' => 'Transaksi berhasil',
-                'invoice_code' => $transaction->invoice_code,
-                'data' => $transaction
+                'booking_code' => $booking->booking_code,
+                'data' => $booking
             ], 201);
         });
     }
@@ -92,26 +97,30 @@ class TransactionController extends Controller
     {
         // ... (Validasi tetap sama) ...
         $userId = $request->user()->id;
-        $destination = \App\Models\Destination::findOrFail($request->destination_id);
+        $destination = Destination::findOrFail($request->destination_id);
 
         return DB::transaction(function () use ($request, $userId, $destination) {
 
             $totalAmount = $destination->price * $request->quantity;
-            $invoiceCode = 'INV-' . Carbon::now()->format('Ymd') . '-' . Str::upper(Str::random(4));
+            do {
+                // Generate: TL + 6 karakter random uppercase (Tanpa Strip)
+                // Contoh Hasil: TLX7K92M
+                $bookingCode = 'TL' . Str::upper(Str::random(6));
+            } while (Booking::where('booking_code', $bookingCode)->exists());
 
             // [PERUBAHAN DISINI]
-            $transaction = Transaction::create([
+            $booking = Booking::create([
                 'user_id' => $userId,
-                'invoice_code' => $invoiceCode,
+                'booking_code' => $bookingCode,
                 'grand_total' => $totalAmount,
                 'status' => 'success',
                 'paid_at' => now(),
                 'payment_method' => $request->payment_method,
             ]);
 
-            // ... (Buat TransactionDetail tetap sama) ...
-            TransactionDetail::create([
-                'transaction_id' => $transaction->id,
+            // ... (Buat BookingDetail tetap sama) ...
+            BookingDetail::create([
+                'booking_id' => $booking->id,
                 'destination_id' => $destination->id,
                 'quantity' => $request->quantity,
                 'price_per_unit' => $destination->price,
@@ -121,36 +130,36 @@ class TransactionController extends Controller
 
             return response()->json([
                 'message' => 'Transaksi berhasil & Pembayaran terkonfirmasi otomatis',
-                'invoice_code' => $transaction->invoice_code,
-                'data' => $transaction
+                'booking_code' => $booking->booking_code,
+                'data' => $booking
             ], 201);
         });
     }
 
     // Riwayat Transaksi User
-    public function myTransactions()
+    public function myBookings()
     {
-        $transactions = Transaction::with(['details.destination'])
+        $bookings = Booking::with(['details.destination'])
             ->where('user_id', Auth::id())
             ->orderBy('created_at', 'desc')
             ->get();
 
-        return response()->json(['data' => $transactions]);
+        return response()->json(['data' => $bookings]);
     }
 
-    // Detail Satu Transaksi (Untuk User melihat Invoice)
-    public function show($invoice_code)
+    // Detail Satu Transaksi (Untuk User melihat Booking ID)
+    public function show($booking_code)
     {
-        $transaction = Transaction::with(['details.destination', 'user'])
-            ->where('invoice_code', $invoice_code)
+        $booking = Booking::with(['details.destination', 'user'])
+            ->where('booking_code', $booking_code)
             ->firstOrFail();
 
         // Keamanan: Pastikan yang lihat adalah pemilik atau admin
-        if ($transaction->user_id !== Auth::id() && Auth::user()->role !== 'admin') {
+        if ($booking->user_id !== Auth::id() && Auth::user()->role !== 'admin') {
             return response()->json(['message' => 'Unauthorized'], 403);
         }
 
-        return response()->json(['data' => $transaction]);
+        return response()->json(['data' => $booking]);
     }
 
     // --- ADMIN AREA ---
@@ -158,7 +167,7 @@ class TransactionController extends Controller
     // Lihat Semua Transaksi (Bisa Filter Status)
     public function adminIndex(Request $request)
     {
-        $query = Transaction::with('user');
+        $query = Booking::with('user');
 
         // Filter status (pending/success)
         if ($request->has('status')) {
@@ -173,8 +182,8 @@ class TransactionController extends Controller
             ]);
         }
 
-        $transactions = $query->orderBy('created_at', 'desc')->get();
+        $bookings = $query->orderBy('created_at', 'desc')->get();
 
-        return response()->json(['data' => $transactions]);
+        return response()->json(['data' => $bookings]);
     }
 }

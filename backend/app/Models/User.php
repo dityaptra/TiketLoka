@@ -47,9 +47,9 @@ class User extends Authenticatable
     }
 
     // Relasi: Satu User bisa punya banyak riwayat transaksi
-    public function transactions()
+    public function bookings()
     {
-        return $this->hasMany(Transaction::class);
+        return $this->hasMany(Booking::class);
     }
 
     /**

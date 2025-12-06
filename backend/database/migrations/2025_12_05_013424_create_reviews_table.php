@@ -15,11 +15,11 @@ return new class extends Migration
         $table->id();
         $table->foreignId('user_id')->constrained()->onDelete('cascade');
         $table->foreignId('destination_id')->constrained()->onDelete('cascade');
-        $table->foreignId('transaction_id')->constrained()->onDelete('cascade');
+        $table->foreignId('booking_id')->constrained()->onDelete('cascade');
         $table->tinyInteger('rating')->unsigned(); // Skala 1 - 5
         $table->text('comment')->nullable();
         $table->timestamps();
-        $table->unique(['user_id', 'destination_id', 'transaction_id']); 
+        $table->unique(['user_id', 'destination_id', 'booking_id']); 
     });
     }
 

@@ -5,13 +5,13 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
-class Transaction extends Model
+class Booking extends Model
 {
     use HasFactory;
 
     protected $fillable = [
         'user_id',
-        'invoice_code',
+        'booking_code',
         'grand_total',
         'status',          // pending, success, failed
         'payment_method',
@@ -32,7 +32,7 @@ class Transaction extends Model
     // Relasi: Transaksi ini punya detail item apa saja?
     public function details()
     {
-        // Perhatikan nama methodnya 'details', modelnya 'TransactionDetail'
-        return $this->hasMany(TransactionDetail::class);
+        // Perhatikan nama methodnya 'details', modelnya 'BookingDetail'
+        return $this->hasMany(BookingDetail::class);
     }
 }

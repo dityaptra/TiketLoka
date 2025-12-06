@@ -12,7 +12,7 @@ class Review extends Model
     protected $fillable = [
         'user_id',
         'destination_id',
-        'transaction_id',
+        'booking_id',
         'rating',
         'comment'
     ];

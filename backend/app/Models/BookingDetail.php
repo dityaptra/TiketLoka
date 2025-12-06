@@ -5,12 +5,12 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
-class TransactionDetail extends Model
+class BookingDetail extends Model
 {
     use HasFactory;
 
     protected $fillable = [
-        'transaction_id',
+        'booking_id',
         'destination_id',
         'quantity',
         'price_per_unit', // Harga saat beli (Snapshot)
@@ -19,9 +19,9 @@ class TransactionDetail extends Model
     ];
 
     // Relasi: Detail ini milik transaksi nomor berapa?
-    public function transaction()
+    public function booking()
     {
-        return $this->belongsTo(Transaction::class);
+        return $this->belongsTo(Booking::class);
     }
 
     // Relasi: Tiket wisata apa yang dibeli di detail ini?
