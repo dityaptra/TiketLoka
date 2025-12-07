@@ -23,6 +23,17 @@ class Booking extends Model
         'paid_at' => 'datetime',
     ];
 
+    // --- TAMBAHAN BARU ---
+    // Tambahkan 'qr_string' ke dalam JSON otomatis
+    protected $appends = ['qr_string'];
+
+    // --- ACCESSOR (Logika Pembuatan String QR) ---
+    public function getQrStringAttribute()
+    {
+        // Frontend akan mengubah text ini menjadi gambar QR
+        return 'TIKETLOKA|' . $this->booking_code;
+    }
+
     // Relasi: Transaksi ini milik user siapa?
     public function user()
     {
