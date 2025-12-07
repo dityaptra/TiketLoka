@@ -45,6 +45,9 @@ Route::middleware('auth:sanctum')->group(function () {
 
     // Beli Langsung (Tanpa Keranjang)
     Route::post('/buy-now', [BookingController::class, 'buyNow']);
+    
+    // Route Simulasi Payment Gateway
+    Route::post('/pay', [BookingController::class, 'pay']);
     Route::get('/my-bookings', [BookingController::class, 'myBookings']);
     Route::get('/bookings/{booking_code}', [BookingController::class, 'show']);
 
